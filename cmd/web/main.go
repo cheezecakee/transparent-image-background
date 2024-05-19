@@ -57,18 +57,39 @@ func upload(c echo.Context) error {
   }
 
   log.Printf("[ File %s uploaded successfully. ]", file.Filename)
+
+  if err := processImage(); err != nil{
+    return err
+  }
   
   return c.Render(http.StatusOK, "download", nil)
 }
 
-// Add something to preview the image
-func process(c echo.Context) error {
+func processImage() error {
+  // Decode uploaded
+  img := Decode(FileName)  
+  
+  // Create 2D slice
+  pixels := Tensor(img)
+
+  // Change white background color to transparent
+  pixels = TransparentBackground(pixels)
+  
+  // Encode img back  
+  newImg := Convert(pixels)
+
+  // Save img for download
+  err := SaveImage(newImg, "./internal/img/processed_" + FileName)
+  if err != nil{
+    return err
+  }
+ 
   return nil
 }
 
 func download(c echo.Context) error{
-  path := "./internal/img/" + FileName
-  return c.Attachment(path, FileName)
+  path := "./internal/img/processed_" + FileName
+  return c.Attachment(path, "processed_" + FileName)
 }
 
 func main() {
